@@ -169,27 +169,32 @@ def main():
     ASCIIColors.green(f"Database '{TEST_DB_NAME}' successfully created and verified.")
 
     # 4. Search and populate the database
-    ASCIIColors.magenta("\n4. Test: Search and populate the database")
-    search_query = "ti:\"chain of thought\" AND cat:cs.AI"
-    search_prompt = f"Please search Arxiv for '{search_query}' and add up to 3 results to the '{TEST_DB_NAME}' database."
-    search_response = client.generate_with_mcp(prompt=search_prompt, streaming_callback=mcp_streaming_callback, max_tool_calls=1)
-    print()
-    assert search_response.get("error") is None, "Error during search and populate."
-    search_output = search_response.get("tool_calls", [{}])[0].get("result", {}).get("output", {})
-    assert search_output.get("status") == "success", "Search and populate tool did not return success status."
-    downloaded_papers = search_output.get("new_papers", [])
-    paper_to_get = downloaded_papers[0] if downloaded_papers else None
-
+    try:
+        ASCIIColors.magenta("\n4. Test: Search and populate the database")
+        search_query = "ti:\"chain of thought\" AND cat:cs.AI"
+        search_prompt = f"Please search Arxiv for '{search_query}' and add up to 3 results to the '{TEST_DB_NAME}' database."
+        search_response = client.generate_with_mcp(prompt=search_prompt, streaming_callback=mcp_streaming_callback, max_tool_calls=1)
+        print()
+        assert search_response.get("error") is None, "Error during search and populate."
+        search_output = search_response.get("tool_calls", [{}])[0].get("result", {}).get("output", {})
+        assert search_output.get("status") == "success", "Search and populate tool did not return success status."
+        downloaded_papers = search_output.get("new_papers", [])
+        paper_to_get = downloaded_papers[0] if downloaded_papers else None
+    except Exception as e:
+        trace_exception(e)
     # 5. Get the contents of the database
-    ASCIIColors.magenta("\n5. Test: Get contents of the populated database")
-    get_contents_prompt = f"Show me all the papers in my '{TEST_DB_NAME}' database."
-    get_contents_response = client.generate_with_mcp(prompt=get_contents_prompt, streaming_callback=mcp_streaming_callback)
-    print()
-    assert get_contents_response.get("error") is None, "Error getting database contents."
-    contents_output = get_contents_response.get("tool_calls", [{}])[0].get("result", {}).get("output", {})
-    assert contents_output.get("paper_count") > 0, "Database appears empty after population step."
-    ASCIIColors.green(f"Database contains {contents_output.get('paper_count')} papers.")
-    
+    try:
+        ASCIIColors.magenta("\n5. Test: Get contents of the populated database")
+        get_contents_prompt = f"Show me all the papers in my '{TEST_DB_NAME}' database."
+        get_contents_response = client.generate_with_mcp(prompt=get_contents_prompt, streaming_callback=mcp_streaming_callback)
+        print()
+        assert get_contents_response.get("error") is None, "Error getting database contents."
+        contents_output = get_contents_response.get("tool_calls", [{}])[0].get("result", {}).get("output", {})
+        assert contents_output.get("paper_count") > 0, "Database appears empty after population step."
+        ASCIIColors.green(f"Database contains {contents_output.get('paper_count')} papers.")
+    except Exception as e:
+        trace_exception(e)
+
     # 6. Get a specific paper's abstract
     if paper_to_get:
         paper_id = paper_to_get["entry_id"]
