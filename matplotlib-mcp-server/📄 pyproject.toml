@@ -1,0 +1,42 @@
+# PArisNeoMCPServers/matplotlib-mcp-server/pyproject.toml
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "matplotlib-mcp-server"
+version = "0.1.0"
+description = "An MCP server for generating data visualizations using Matplotlib."
+authors = [
+    { name = "ParisNeo", email = "parisneoai@gmail.com" },
+    { name = "Your Name/Alias", email = "youremail@example.com" } # Placeholder for contributor
+]
+license = "MIT" # Or Apache-2.0 to match the root project, if desired. Assuming MIT for now.
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License", # Adjust if using Apache-2.0
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "mcp>=0.6.0",               # MCP SDK
+    "matplotlib>=3.5.0",        # For plotting
+    "python-dotenv>=0.20.0",    # For loading .env files
+    "uvicorn>=0.20.0",          # For running FastMCP if not using stdio
+    "ascii-colors>=0.5.5",      # For nice console output
+]
+
+[project.scripts]
+matplotlib-mcp-server = "matplotlib_mcp_server.server:main_cli"
+
+[project.urls]
+Homepage = "https://github.com/PArisNeoMCPServers/PArisNeoMCPServers/tree/main/matplotlib-mcp-server" # Adjust if it gets its own repo
+Repository = "https://github.com/PArisNeoMCPServers/PArisNeoMCPServers"

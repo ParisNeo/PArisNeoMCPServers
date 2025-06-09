@@ -35,7 +35,7 @@ if not PATH_TO_DDG_MCP_SERVER_PROJECT.is_dir():
 # This example will use python directly to run the server script
 # instead of relying on `uvx` or `uv run` for simplicity in this example context,
 # but in a real deployment, `uvx` or `uv run` is preferred.
-SERVER_SCRIPT_RELATIVE_PATH = "duckduckgo-mcp-server/server.py"
+SERVER_SCRIPT_RELATIVE_PATH = "duckduckgo_mcp_server/server.py"
 FULL_SERVER_SCRIPT_PATH = (PATH_TO_DDG_MCP_SERVER_PROJECT / SERVER_SCRIPT_RELATIVE_PATH).resolve()
 print(FULL_SERVER_SCRIPT_PATH)
 if not FULL_SERVER_SCRIPT_PATH.exists():
