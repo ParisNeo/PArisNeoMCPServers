@@ -1,0 +1,43 @@
+# PArisNeoMCPServers/duckduckgo-mcp-server/pyproject.toml
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "duckduckgo-mcp-server"
+version = "0.1.0"
+description = "An MCP server for performing web searches using DuckDuckGo."
+authors = [
+    { name = "ParisNeo", email = "parisneoai@gmail.com" },
+    { name = "Your Name/Alias", email = "youremail@example.com" } # Placeholder for contributor
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "mcp>=0.6.0",               # MCP SDK
+    "duckduckgo-search>=5.0.0", # For DuckDuckGo search functionality
+    "python-dotenv>=0.20.0",    # For loading .env files
+    "uvicorn>=0.20.0",          # For running FastMCP if not using stdio
+    "ascii-colors>=0.5.5",      # For nice console output
+]
+
+[project.scripts]
+# Defines the command that `uvx duckduckgo-mcp-server` or `uv run duckduckgo-mcp-server` will execute
+duckduckgo-mcp-server = "duckduckgo_mcp_server.server:main_cli"
+
+[project.urls]
+Homepage = "https://github.com/PArisNeoMCPServers/duckduckgo-mcp-server" # To be created
+Repository = "https://github.com/PArisNeoMCPServers/duckduckgo-mcp-server" # To be created
