@@ -106,7 +106,7 @@ async def generate_matplotlib_plot(
     name="get_supported_plot_info",
     description="Returns a list of supported plot types and output formats."
 )
-async def get_supported_info() -> Dict[str, Any]:
+async def get_supported_plot_info() -> Dict[str, Any]:
     """
     MCP tool endpoint to get information about supported plot types and formats.
     """
