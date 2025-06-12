@@ -27,6 +27,50 @@ except ImportError as e:
 # --- Now that dependencies are confirmed, proceed with normal imports ---
 from typing import Dict, Any, Optional
 import arxiv_wrapper
+import argparse  
+
+def parse_args():
+    # Initialize parser
+    parser = argparse.ArgumentParser(description="Server configuration")
+
+    # Add arguments
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="localhost",
+        help="Hostname or IP address (default: localhost)"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=9624,
+        help="Port number (1-65535)"
+    )
+    parser.add_argument(
+        "--log-level",
+        dest="log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Logging level (default: INFO)"
+    )
+    # New transport argument
+    parser.add_argument(
+        "--transport",
+        type=str,
+        choices=["stdio", "sse", "streamable-http"],
+        default="stdio",
+        help="Transport protocol: stdio, sse, or streamable-http"
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Validate port range
+    if not (1 <= args.port <= 65535):
+        parser.error("Port must be between 1 and 65535")
+
+    return args
 
 # --- Environment and Path Setup ---
 SERVER_ROOT_PATH = Path(__file__).resolve().parent.parent
@@ -39,11 +83,23 @@ else:
     ASCIIColors.yellow(f".env file not found at {env_path}. Relying on existing environment variables or wrapper defaults.")
 
 # --- MCP Server Initialization ---
-mcp = FastMCP(
-    name="ArxivMCPServer",
-    description="Provides tools to search Arxiv, download papers, and manage local databases of articles.",
-    version="0.1.0"
-)
+args = parse_args()
+if args.transport=="streamable-http":
+    mcp = FastMCP(
+        name="ArxivMCPServer",
+        description="Provides tools to search Arxiv, download papers, and manage local databases of articles.",
+        version="0.1.0",
+        host=args.host,
+        port=args.port,
+        log_level=args.log_level
+    )
+    ASCIIColors.cyan(f"{mcp.settings}")
+else:
+    mcp = FastMCP(
+        name="ArxivMCPServer",
+        description="Provides tools to search Arxiv, download papers, and manage local databases of articles.",
+        version="0.1.0"
+    )
 
 ASCIIColors.cyan(f"Arxiv databases will be stored in: {arxiv_wrapper.ARXIV_DATABASES_ROOT.resolve()}")
 
@@ -129,8 +185,10 @@ async def get_paper_abstract(database_name: str, paper_id: str) -> Dict[str, Any
 def main_cli():
     ASCIIColors.cyan("Starting Arxiv MCP Server...")
     ASCIIColors.cyan("MCP server will list Arxiv tools upon connection.")
-    ASCIIColors.cyan("Listening for MCP messages on stdio...")
-    mcp.run(transport="stdio")
+    ASCIIColors.cyan(f"Listening for MCP messages on {args.transport}...")
+    ASCIIColors.magenta(f"Running the server with the following arguments:\n{args}")
+
+    mcp.run(transport=args.transport)
 
 if __name__ == "__main__":
     main_cli()
