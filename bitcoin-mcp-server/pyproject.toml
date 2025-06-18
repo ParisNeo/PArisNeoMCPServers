@@ -1,0 +1,42 @@
+# PArisNeoMCPServers/bitcoin-mcp-server/pyproject.toml
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bitcoin-mcp-server"
+version = "0.1.0"
+description = "An MCP server for managing Bitcoin wallets, querying blockchain data, and getting market prices."
+authors = [
+    { name = "ParisNeo", email = "parisneoai@gmail.com" },
+    { name = "Your Name/Alias", email = "youremail@example.com" } # Placeholder for contributor
+]
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: System :: Networking",
+]
+dependencies = [
+    "mcp>=0.6.0",                   # MCP SDK
+    "python-bitcoinlib>=0.11.0",    # For Bitcoin wallet and transaction management
+    "requests>=2.28.0",             # For fetching market data from APIs
+    "python-dotenv>=0.20.0",        # For loading .env files
+    "uvicorn>=0.20.0",              # For running FastMCP if not using stdio
+    "ascii-colors>=0.5.5",          # For nice console output
+]
+
+[project.scripts]
+bitcoin-mcp-server = "bitcoin_mcp_server.server:main_cli"
+
+[project.urls]
+Repository = "https://github.com/PArisNeoMCPServers/PArisNeoMCPServers"
