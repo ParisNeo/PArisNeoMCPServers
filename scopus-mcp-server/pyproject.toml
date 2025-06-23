@@ -3,7 +3,7 @@ name = "scopus_mcp_server"
 version = "0.1.0"
 description = "MCP server providing access to Scopus API and PDF reading from URLs"
 authors = [
-    { name = "Ton Nom", email = "ton.email@example.com" }
+    { name = "ParisNeo", email = "parisneo_ai@gmail.com" }
 ]
 dependencies = [
     "python-dotenv",
