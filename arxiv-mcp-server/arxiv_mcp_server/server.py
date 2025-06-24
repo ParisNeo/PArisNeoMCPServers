@@ -59,7 +59,7 @@ def parse_args():
         "--transport",
         type=str,
         choices=["stdio", "sse", "streamable-http"],
-        default="stdio",
+        default="streamable-http",
         help="Transport protocol: stdio, sse, or streamable-http"
     )
 
