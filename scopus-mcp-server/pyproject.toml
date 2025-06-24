@@ -1,0 +1,22 @@
+[project]
+name = "scopus_mcp_server"
+version = "0.1.0"
+description = "MCP server providing access to Scopus API and PDF reading from URLs"
+authors = [
+    { name = "ParisNeo", email = "parisneo_ai@gmail.com" }
+]
+dependencies = [
+    "python-dotenv",
+    "requests",
+    "PyPDF2",
+    "ascii-colors",
+    "mcp"  # Assuming this is installable from PyPI or a custom index
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+scopus-mcp-server = "scopus_mcp_server.server:main_cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
