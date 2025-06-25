@@ -8,17 +8,7 @@ from dotenv import load_dotenv
 from ascii_colors import ASCIIColors, trace_exception
 
 
-env_path = Path('.') / '.env'
-if not env_path.exists():
-    env_path = Path(__file__).resolve().parent.parent / '.env'
-if env_path.exists():
-    ASCIIColors.cyan(f"Loading environment variables from: {env_path.resolve()}")
-    load_dotenv(dotenv_path=env_path)
-else:
-    ASCIIColors.yellow(f".env file not found. Relying on existing environment variables.")
 
-if not os.getenv("OPENAI_API_KEY"):
-    ASCIIColors.red("FATAL: OPENAI_API_KEY is not set.")
 
 try:
     from . import openai_wrapper 
@@ -26,11 +16,84 @@ except ImportError:
     import openai_wrapper
 
 
-mcp = FastMCP(
-    name="OpenAIMCPServer",
-    description="Provides OpenAI functionalities (TTS, DALL-E) via MCP.", # Updated description
-    version="0.1.2" # Incremented version
-)
+from typing import Dict, Any, Optional
+import argparse  
+
+def parse_args():
+    # Initialize parser
+    parser = argparse.ArgumentParser(description="Server configuration")
+
+    # Add arguments
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="localhost",
+        help="Hostname or IP address (default: localhost)"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=9624,
+        help="Port number (1-65535)"
+    )
+    parser.add_argument(
+        "--log-level",
+        dest="log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Logging level (default: INFO)"
+    )
+    # New transport argument
+    parser.add_argument(
+        "--transport",
+        type=str,
+        choices=["stdio", "sse", "streamable-http"],
+        default="streamable-http",
+        help="Transport protocol: stdio, sse, or streamable-http"
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Validate port range
+    if not (1 <= args.port <= 65535):
+        parser.error("Port must be between 1 and 65535")
+
+    return args
+
+# --- Environment and Path Setup ---
+SERVER_ROOT_PATH = Path(__file__).resolve().parent.parent
+env_path = SERVER_ROOT_PATH / '.env'
+
+if env_path.exists():
+    ASCIIColors.cyan(f"Loading environment variables from: {env_path.resolve()}")
+    load_dotenv(dotenv_path=env_path)
+else:
+    ASCIIColors.yellow(f".env file not found at {env_path}. Relying on existing environment variables or wrapper defaults.")
+
+if not os.getenv("OPENAI_API_KEY"):
+    ASCIIColors.red("FATAL: OPENAI_API_KEY is not set.")
+
+# --- MCP Server Initialization ---
+args = parse_args()
+if args.transport=="streamable-http":
+    mcp = FastMCP(
+        name="OpenAIMCPServer",
+        description="Provides OpenAI functionalities (TTS, DALL-E) via MCP.", # Updated description
+        version="0.1.0",
+        host=args.host,
+        port=args.port,
+        log_level=args.log_level
+    )
+    ASCIIColors.cyan(f"{mcp.settings}")
+else:
+    mcp = FastMCP(
+        name="OpenAIMCPServer",
+        description="Provides OpenAI functionalities (TTS, DALL-E) via MCP.", # Updated description
+        version="0.1.0"
+    )
+
 
 # --- TTS Tool ---
 @mcp.tool(
@@ -81,8 +144,8 @@ def main_cli():
         ASCIIColors.red("OpenAI API Key (OPENAI_API_KEY) not found in environment.")
     ASCIIColors.cyan(f"Starting OpenAI MCP Server. Focus: TTS & DALL-E.")
     ASCIIColors.cyan(" MCP server will list tools upon connection.")
-    ASCIIColors.cyan("Listening for MCP messages on stdio...")
-    mcp.run(transport="stdio")
+    ASCIIColors.cyan(f"Listening for MCP messages on {mcp.run(transport=args.transport)}...")
+    mcp.run(transport=args.transport)
 
 if __name__ == "__main__":
     main_cli()
