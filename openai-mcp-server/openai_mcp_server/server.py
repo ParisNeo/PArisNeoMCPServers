@@ -118,7 +118,7 @@ async def openai_generate_tts(
 # --- DALL-E Image Generation Tool ---
 @mcp.tool(
     name="generate_image_dalle",
-    description="Generates an image using OpenAI DALL-E based on a text prompt."
+    description="Generates an image using OpenAI DALL-E based on a text prompt. Returns the url to one or multiple images. You need to use ![](url) format to show the generated images in the ui"
 )
 async def openai_generate_image_dalle(
     prompt: str,
