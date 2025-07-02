@@ -113,10 +113,6 @@ async def hello() -> Dict[str, Any]:
     ASCIIColors.info("MCP Tool 'list_Example_databases' called.")
     return {"status":"success","answer":"Hello"}
 
-@mcp.tool(
-    name="create_Example_database",
-    description="Creates a new, empty local database to store Example papers."
-)
 
 # --- Main CLI Entry Point ---
 def main_cli():
