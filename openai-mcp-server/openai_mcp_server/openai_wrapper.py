@@ -1,11 +1,13 @@
 # openai-mcp-server/openai_mcp_server/openai_wrapper.py
 import os
-import base64 # For encoding TTS audio
+import base64
+import uuid
+import httpx
+from pathlib import Path
 from openai import OpenAI, APIError, RateLimitError
-from typing import List, Dict, Optional, Any, Literal # Literal for specific choices
-from ascii_colors import ASCIIColors, trace_exception # Assuming you have trace_exception
+from typing import List, Dict, Optional, Any, Literal
+from ascii_colors import ASCIIColors, trace_exception
 
-# Initialize the OpenAI client
 try:
     client = OpenAI()
 except Exception as e:
@@ -13,11 +15,11 @@ except Exception as e:
     client = None
 
 DEFAULT_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-3.5-turbo")
-DEFAULT_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1") # Available: tts-1, tts-1-hd
-DEFAULT_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "alloy") # Available: alloy, echo, fable, onyx, nova, shimmer
-DEFAULT_DALLE_MODEL = os.getenv("OPENAI_DALLE_MODEL", "dall-e-3") # Available: dall-e-2, dall-e-3
-DEFAULT_DALLE_IMAGE_SIZE_D3 = os.getenv("OPENAI_DALLE_IMAGE_SIZE_D3", "1024x1024") # dall-e-3 sizes
-DEFAULT_DALLE_IMAGE_SIZE_D2 = os.getenv("OPENAI_DALLE_IMAGE_SIZE_D2", "1024x1024") # dall-e-2 sizes
+DEFAULT_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1")
+DEFAULT_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "alloy")
+DEFAULT_DALLE_MODEL = os.getenv("OPENAI_DALLE_MODEL", "dall-e-3")
+DEFAULT_DALLE_IMAGE_SIZE_D3 = os.getenv("OPENAI_DALLE_IMAGE_SIZE_D3", "1024x1024")
+DEFAULT_DALLE_IMAGE_SIZE_D2 = os.getenv("OPENAI_DALLE_IMAGE_SIZE_D2", "1024x1024")
 
 
 async def generate_chat_completion(
@@ -34,7 +36,7 @@ async def generate_chat_completion(
     try:
         completion = await client.chat.completions.create(
             model=selected_model,
-            messages=messages, # type: ignore
+            messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs
@@ -71,36 +73,21 @@ async def generate_tts_audio(
     selected_model = model if model else DEFAULT_TTS_MODEL
     selected_voice = voice if voice else DEFAULT_TTS_VOICE
     
-    current_speed = speed if speed is not None else 1.0 # Use a local var for clarity
+    current_speed = speed if speed is not None else 1.0
     if not (0.25 <= current_speed <= 4.0):
         return {"error": "Invalid speed value. Must be between 0.25 and 4.0."}
 
     ASCIIColors.info(f"OpenAI Wrapper: Requesting TTS for text '{input_text[:30]}...' using model '{selected_model}', voice '{selected_voice}'.")
     try:
-        # client.audio.speech.create makes an HTTP request and returns an httpx.Response
-        response = client.audio.speech.create( # This line makes the API call
+        response = client.audio.speech.create(
             model=selected_model,
-            voice=selected_voice, # type: ignore
+            voice=selected_voice,
             input=input_text,
             response_format=response_format,
             speed=current_speed
         )
         
-        # The response object from a non-streaming binary request like this
-        # will have its content available directly after the await.
-        # The `response` is an `openai.Stream` which is an `httpx.Response`.
-        # We need to get the raw bytes.
-        
-        # The most direct way to get bytes from an httpx.Response is response.content
-        # However, since the API call was awaited, the response should be fully received.
-        # The openai.Stream object might offer a more specific way.
-        # Let's try using the stream_to_file method to a BytesIO buffer if direct content access is tricky,
-        # or check if response.read() for non-streaming completed responses works.
-
-        # According to OpenAI SDK, for non-streaming audio, `response.read()` should give bytes
-        # or you can use `response.content` if you are sure it's fully loaded.
-        # Since `client.audio.speech.create` is awaited, the response should be complete.
-        audio_bytes = response.content # This should be the raw bytes of the audio file
+        audio_bytes = response.content
 
         if not audio_bytes:
             ASCIIColors.error("OpenAI Wrapper: TTS audio response content is empty.")
@@ -123,39 +110,34 @@ async def generate_tts_audio(
         return {"error": f"OpenAI TTS Rate Limit Error: {e.message}"}
     except Exception as e:
         ASCIIColors.error(f"Unexpected error with OpenAI TTS: {str(e)}", exc_info=True)
-        # trace_exception(e) # Use this if logger isn't capturing traceback well enough
         return {"error": f"Unexpected error with OpenAI TTS: {str(e)}"}
 
 async def generate_dalle_image(
     prompt: str,
+    public_dir: Path,
+    file_server_base_url: str,
     model: Optional[str] = None,
-    n: int = 1, # Number of images to generate (dall-e-2: 1-10, dall-e-3: 1)
-    quality: Literal["standard", "hd"] = "standard", # For dall-e-3
+    n: int = 1,
+    quality: Literal["standard", "hd"] = "standard",
     response_format: Literal["url", "b64_json"] = "url",
-    size: Optional[str] = None, # e.g., "1024x1024", "1792x1024", etc.
-    style: Literal["vivid", "natural"] = "vivid" # For dall-e-3
+    size: Optional[str] = None,
+    style: Literal["vivid", "natural"] = "vivid"
 ) -> Dict[str, Any]:
     if not client:
         return {"error": "OpenAI client not initialized. Check API key."}
 
     selected_model = model if model else DEFAULT_DALLE_MODEL
 
-    # Validate n based on model
     if selected_model == "dall-e-3" and n != 1:
         ASCIIColors.warning("DALL-E 3 currently supports generating 1 image at a time (n=1). Setting n=1.")
         n = 1
     elif selected_model == "dall-e-2" and not (1 <= n <= 10):
         return {"error": "For DALL-E 2, 'n' (number of images) must be between 1 and 10."}
 
-
-    # Determine default size based on model if not provided
     selected_size = size
     if not selected_size:
         selected_size = DEFAULT_DALLE_IMAGE_SIZE_D3 if selected_model == "dall-e-3" else DEFAULT_DALLE_IMAGE_SIZE_D2
 
-    # Validate image sizes (OpenAI Python library usually handles this, but good to be aware)
-    # DALL-E 3: 1024x1024, 1792x1024, 1024x1792
-    # DALL-E 2: 256x256, 512x512, 1024x1024
     valid_sizes_d3 = ["1024x1024", "1792x1024", "1024x1792"]
     valid_sizes_d2 = ["256x256", "512x512", "1024x1024"]
 
@@ -164,36 +146,53 @@ async def generate_dalle_image(
     if selected_model == "dall-e-2" and selected_size not in valid_sizes_d2:
         return {"error": f"Invalid size '{selected_size}' for DALL-E 2. Valid sizes: {valid_sizes_d2}"}
 
-
     ASCIIColors.info(f"OpenAI Wrapper: Requesting DALL-E image generation for prompt '{prompt[:50]}...' using model '{selected_model}'.")
     try:
         api_params = {
             "model": selected_model,
             "prompt": prompt,
             "n": n,
-            "response_format": response_format,
+            "response_format": "url",
             "size": selected_size,
         }
         if selected_model == "dall-e-3":
             api_params["quality"] = quality
             api_params["style"] = style
         
-        response = client.images.generate(**api_params) # type: ignore
+        response = await client.images.generate(**api_params)
 
         images_data = []
-        for img in response.data:
-            if response_format == "url" and img.url:
-                images_data.append({"url": img.url, "revised_prompt": img.revised_prompt})
-            elif response_format == "b64_json" and img.b64_json:
-                images_data.append({"b64_json": img.b64_json, "revised_prompt": img.revised_prompt})
-        
-        ASCIIColors.green(f"OpenAI Wrapper: DALL-E image(s) data received ({len(images_data)} images).")
-        return {
-            "images": images_data,
-            "model_used": selected_model
-        }
-    except APIError as e: return {"error": f"OpenAI DALL-E API Error: {e.message}", "status_code": e.status_code}
-    except RateLimitError as e: return {"error": f"OpenAI DALL-E Rate Limit Error: {e.message}"}
+        async with httpx.AsyncClient() as http_client:
+            for img in response.data:
+                if not img.url:
+                    continue
+
+                download_response = await http_client.get(img.url)
+                download_response.raise_for_status()
+                image_bytes = download_response.content
+
+                filename = f"{uuid.uuid4()}.png"
+                file_path = public_dir / filename
+                with open(file_path, "wb") as f:
+                    f.write(image_bytes)
+                
+                if response_format == "url":
+                    local_url = f"{file_server_base_url}/images/{filename}"
+                    images_data.append({"url": local_url, "revised_prompt": img.revised_prompt})
+                elif response_format == "b64_json":
+                    b64_content = base64.b64encode(image_bytes).decode('utf-8')
+                    images_data.append({"b64_json": b64_content, "revised_prompt": img.revised_prompt})
+
+        ASCIIColors.green(f"OpenAI Wrapper: DALL-E image(s) downloaded and processed ({len(images_data)} images).")
+        return {"images": images_data, "model_used": selected_model}
+
+    except httpx.HTTPStatusError as e:
+        ASCIIColors.error(f"Failed to download image from OpenAI URL: {e.request.url} - Status {e.response.status_code}")
+        return {"error": f"Failed to download image from OpenAI URL: {e.request.url}"}
+    except APIError as e:
+        return {"error": f"OpenAI DALL-E API Error: {e.message}", "status_code": e.status_code}
+    except RateLimitError as e:
+        return {"error": f"OpenAI DALL-E Rate Limit Error: {e.message}"}
     except Exception as e:
         trace_exception(e)
         return {"error": f"Unexpected error with OpenAI DALL-E: {str(e)}"}

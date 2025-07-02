@@ -13,7 +13,7 @@ authors = [
 ]
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.9" # OpenAI library and FastMCP benefit from modern Python
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -25,22 +25,18 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "mcp>=0.6.0", # Or your specific required version of MCP SDK
-    "openai>=1.0.0", # Use the new OpenAI SDK version
+    "mcp>=0.6.0",
+    "openai>=1.0.0",
     "python-dotenv>=0.20.0",
-    "uvicorn>=0.20.0", # For running FastMCP if not using mcp cli's stdio directly
-    "ascii-colors>=0.5.5", # For nice console output
+    "uvicorn>=0.20.0",
+    "fastapi>=0.95.0",
+    "httpx>=0.24.0",
+    "ascii-colors>=0.5.5",
 ]
 
 [project.scripts]
-# This defines the command that `uvx openai-mcp-server` will effectively run
-# (or `uv run openai-mcp-server` from within the project directory)
 openai-mcp-server = "openai_mcp_server.server:main_cli"
 
 [project.urls]
-Homepage = "https://github.com/PArisNeoMCPServers/openai-mcp-server" # Replace
-Repository = "https://github.com/PArisNeoMCPServers/openai-mcp-server" # Replace
-
-# Optional: For Hatchling specific build configurations if needed
-# [tool.hatch.build.targets.wheel]
-# packages = ["openai_mcp_server"]
+Homepage = "https://github.com/PArisNeoMCPServers/openai-mcp-server"
+Repository = "https://github.com/PArisNeoMCPServers/openai-mcp-server"
