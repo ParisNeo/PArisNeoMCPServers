@@ -103,3 +103,36 @@ Downloads a file from SharePoint to the server's local filesystem.
     - `remote_file_path` (string, required): The path within SharePoint (e.g., `Documents/Reports/Q1.pdf`).
     - `local_save_path` (string, required): The path where the file will be saved locally.
 - **Success Response**: `{"status": "success", "message": "File downloaded to /path/to/local/save/location/Q1.pdf"}`
+
+### 🔎 `search_sharepoint`
+Performs a full-text search across the SharePoint site, searching inside file contents and metadata. This is the most powerful tool for finding information.
+
+- **Parameters**:
+    - `query_text` (string, required): The term or phrase to search for (e.g., "Quarterly Financial Report").
+    - `library_name` (string, optional): The name of a specific document library to limit the search to. If omitted, searches the entire site.
+    - `max_results` (integer, optional): The maximum number of results to return. Defaults to `10`.
+
+- **Success Response**: A list of documents matching the query. The `path` can be used with the `download_file` tool.
+    ```json
+    {
+        "status": "success",
+        "results": [
+            {
+                "title": "Q4 Financial Summary",
+                "path": "https://yourtenant.sharepoint.com/sites/YourSite/Documents/Reports/Q4_Financial_Summary.pptx",
+                "author": "Alice Johnson",
+                "last_modified": "2023-10-28T14:30:00Z",
+                "file_type": "pptx",
+                "hit_highlighted_summary": "This document contains the final <c0>Quarterly Financial Report</c0> for Q4. Key metrics include a 15% increase in revenue..."
+            },
+            {
+                "title": "Archived Financials",
+                "path": "https://yourtenant.sharepoint.com/sites/YourSite/Documents/Archive/OldReports.docx",
+                "author": "Bob Williams",
+                "last_modified": "2022-01-15T11:00:00Z",
+                "file_type": "docx",
+                "hit_highlighted_summary": "Notes from the Q1 <c0>financial report</c0> meeting..."
+            }
+        ]
+    }
+    ```

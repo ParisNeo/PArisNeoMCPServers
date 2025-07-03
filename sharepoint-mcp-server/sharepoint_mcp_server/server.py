@@ -89,7 +89,7 @@ def main_cli():
         name="SharePointMCPServer",
         description="Provides tools to interact with a Microsoft SharePoint document library.",
         version="0.1.0",
-        host=args.host, port=args.port, log_level=args.log_level.lower()
+        host=args.host, port=args.port, log_level=args.log_level.upper()
     )
 
     # --- MCP Tool Definitions ---
@@ -195,7 +195,61 @@ def main_cli():
             logging.error(f"Error downloading file '{remote_file_path}': {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
 
+    @mcp.tool()
+    async def search_sharepoint(query_text: str, library_name: Optional[str] = None, max_results: int = 10) -> Dict[str, Any]:
+        """
+        Performs a full-text search across the SharePoint site or a specific library.
+        Searches file contents and metadata.
+        :param query_text: The search term or phrase.
+        :param library_name: Optional. The name of the document library to limit the search to.
+        :param max_results: The maximum number of results to return. Defaults to 10.
+        """
+        try:
+            # --- Import Search-specific classes ---
+            from office365.search.request import SearchRequest
+            from office365.search.query.text import SearchQueryText
 
+            ctx = get_sharepoint_context()
+            
+            # --- Build the search query ---
+            final_query_text = query_text
+            if library_name:
+                # Use Keyword Query Language (KQL) to scope the search to a specific path
+                site_url = os.getenv("SHAREPOINT_URL", "")
+                path_filter = f"Path:{site_url}/{library_name}/*"
+                final_query_text = f"{query_text} {path_filter}"
+            
+            search_request = SearchRequest(
+                query=SearchQueryText(final_query_text),
+                select_properties=["Title", "Path", "Author", "LastModifiedTime", "HitHighlightedSummary", "FileType"],
+                row_limit=max_results
+            )
+
+            logging.info(f"Executing search with query: '{final_query_text}'")
+            result = ctx.search.post_query(search_request).execute_query()
+            
+            # --- Process and format the results ---
+            rows = result.value.PrimaryQueryResult.RelevantResults.Table.Rows
+            search_results = []
+            for row in rows:
+                # The row is a dict-like object with a 'Cells' list of key-value pairs
+                cell_dict = {cell['Key']: cell['Value'] for cell in row.Cells}
+                search_results.append({
+                    "title": cell_dict.get("Title"),
+                    "path": cell_dict.get("Path"),
+                    "author": cell_dict.get("Author"),
+                    "last_modified": cell_dict.get("LastModifiedTime"),
+                    "file_type": cell_dict.get("FileType"),
+                    # The summary is HTML with <c0>...</c0> tags highlighting the match
+                    "hit_highlighted_summary": cell_dict.get("HitHighlightedSummary")
+                })
+
+            logging.info(f"Search returned {len(search_results)} results.")
+            return {"status": "success", "results": search_results}
+
+        except Exception as e:
+            logging.error(f"Error during SharePoint search for query '{query_text}': {e}", exc_info=True)
+            return {"status": "error", "message": f"An error occurred during search. Reason: {e}"}
     # --- Run the Server ---
     logging.info(f"Starting SharePoint MCP Server on {args.transport}...")
     mcp.run(transport=args.transport)

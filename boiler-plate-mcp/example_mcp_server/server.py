@@ -113,31 +113,13 @@ def main_cli():
         version="0.1.0",
         host=args.host,
         port=args.port,
-        log_level=args.log_level.lower() # FastMCP uses lowercase log levels
+        log_level=args.log_level.upper() # FastMCP uses lowercase log levels
     )
 
     # --- MCP Tool Definitions ---
     @mcp.tool(
         name="hello",
         description="An example MCP tool that returns a greeting.",
-        # Add parameter and return value schemas for better client integration
-        parameters={
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The name to include in the greeting."
-                }
-            },
-            "required": ["name"]
-        },
-        returns={
-            "type": "object",
-            "properties": {
-                "status": {"type": "string", "enum": ["success"]},
-                "greeting": {"type": "string"}
-            }
-        }
     )
     async def hello(name: str) -> Dict[str, Any]:
         """
