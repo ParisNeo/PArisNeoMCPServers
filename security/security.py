@@ -43,3 +43,23 @@ class IntrospectionTokenVerifier(TokenVerifier):
         return MyTokenInfo(**token_info_dict)
     
 # to recover the user information, just use token_info = token_info_context.get()
+# To build the MCP server use:
+# resource_server_url=f"http://localhost:{args.port}"
+# mcp = FastMCP(
+#     name="MyMCPServer",
+#     description="Server description.",
+#     version="0.1.0",
+#     host=args.host,
+#     port=args.port,
+#     log_level=args.log_level,
+#     # 1. This tells MCP to use your class for authentication.
+#     token_verifier=IntrospectionTokenVerifier(),
+#     # 2. This tells MCP to protect all tools by default.
+#     auth=AuthSettings(
+#         # tokens delivery server
+#         issuer_url=AUTHORIZATION_SERVER_URL,
+#         # Resources server (this mcp 
+#         resource_server_url=resource_server_url, # Le port du serveur MCP
+#         required_scopes=[]
+#     )
+# )
