@@ -193,3 +193,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 mcp_example_outputs
+
+# databases
+*.db*
