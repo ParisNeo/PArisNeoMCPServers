@@ -47,11 +47,11 @@ class IntrospectionTokenVerifier(TokenVerifier):
                 response.raise_for_status()
             except httpx.RequestError as e:
                 logging.error(f"Could not connect to introspection endpoint at {AUTHORIZATION_SERVER_URL}: {e}")
-                return AccessToken(active=False)
+                return AccessToken(token="", active=False, client_id="", scopes=[])
 
         token_info_dict = response.json()
         if not token_info_dict.get("active", False):
-            return AccessToken(active=False)
+            return AccessToken(token="", active=False, client_id="", scopes=[])
             
         token_info_dict["token"] = token
         token_info_dict["client_id"] = str(token_info_dict.get("user_id"))
